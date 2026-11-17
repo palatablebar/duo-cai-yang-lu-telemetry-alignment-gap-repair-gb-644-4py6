@@ -49,6 +49,16 @@ CREATE TABLE IF NOT EXISTS offsets (
     seconds    INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS dst_windows (
+    run_id     TEXT NOT NULL,
+    station    TEXT NOT NULL,
+    sensor_id  TEXT NOT NULL,
+    fold_start_utc TEXT NOT NULL,
+    fold_end_utc   TEXT NOT NULL,
+    pre_offset_minutes  INTEGER NOT NULL,
+    post_offset_minutes INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS samples (
     run_id     TEXT NOT NULL,
     source_row INTEGER NOT NULL,
@@ -61,7 +71,11 @@ CREATE TABLE IF NOT EXISTS samples (
     ingest_seq INTEGER NOT NULL,
     offset_seconds INTEGER NOT NULL,
     late       INTEGER NOT NULL,
-    flags      TEXT NOT NULL
+    flags      TEXT NOT NULL,
+    in_fold    INTEGER NOT NULL DEFAULT 0,
+    fold_occurrence INTEGER NOT NULL DEFAULT 0,
+    local_clock TEXT NOT NULL DEFAULT '',
+    local_offset_minutes INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS quarantine (
@@ -97,7 +111,9 @@ CREATE TABLE IF NOT EXISTS grid (
     state      TEXT NOT NULL,
     reason     TEXT NOT NULL,
     fill_policy TEXT NOT NULL,
-    source_row INTEGER
+    source_row INTEGER,
+    in_fold    INTEGER NOT NULL DEFAULT 0,
+    fold_occurrence INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS windows (
@@ -127,6 +143,7 @@ CREATE INDEX IF NOT EXISTS idx_grid_run ON grid(run_id);
 CREATE INDEX IF NOT EXISTS idx_windows_run ON windows(run_id);
 CREATE INDEX IF NOT EXISTS idx_reconcile_run ON reconcile(run_id);
 CREATE INDEX IF NOT EXISTS idx_duplicates_run ON duplicates(run_id);
+CREATE INDEX IF NOT EXISTS idx_dst_run ON dst_windows(run_id);
 """
 
 

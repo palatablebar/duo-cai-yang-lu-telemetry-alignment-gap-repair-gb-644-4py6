@@ -6,6 +6,7 @@ from app import config, store
 from app.errors import NotFoundError
 from app.modules.m3_quality import quarantine as quarantine_store
 from app.modules.m6_batches import history
+from app.modules.m8_dst import service as dst_service
 
 from . import csv_out, evidence, manifest_out
 
@@ -44,6 +45,7 @@ def summary(conn, run_id: str) -> dict:
     if run is None:
         raise NotFoundError("批次不存在", code="RUN_NOT_FOUND", detail={"run_id": run_id})
     manifest = manifest_out.build(conn, run_id)
+    dst_windows = dst_service.dst_windows_of(conn, run_id)
     return {
         "run_id": run_id,
         "run_key": run["run_key"],
@@ -68,4 +70,6 @@ def summary(conn, run_id: str) -> dict:
         ),
         "tz": "+08:00",
         "grid_minutes": config.GRID_MINUTES,
+        "dst_fold_windows": len(dst_windows),
+        "dst_fold_buckets": run["counts"].get("fold_buckets", 0),
     }

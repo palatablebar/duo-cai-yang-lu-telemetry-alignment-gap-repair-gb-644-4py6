@@ -13,6 +13,7 @@ def explain_line(line: compare.ReconcileLine, counts: dict) -> dict:
         "网格账": "检查采样率与全局区间是否被改写",
         "数值账": "检查采纳值是否在补齐阶段被改写",
         "窗口账": "检查窗口是否按 15 分钟对齐生成",
+        "回拨账": "检查回拨窗口内两次经过是否各归各桶，无时区标记行是否已隔离",
     }
     return {
         "line": line.name,
@@ -26,8 +27,11 @@ def explain(lines: list[compare.ReconcileLine], counts: dict) -> list[dict]:
     return [explain_line(line, counts) for line in lines]
 
 
+_CN_NUM = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
+
+
 def conclusion(lines: list[compare.ReconcileLine]) -> str:
     bad = [line.name for line in lines if line.state != "OK"]
     if not bad:
-        return "四账相等"
+        return f"{_CN_NUM.get(len(lines), len(lines))}账相等"
     return "不平：" + "、".join(bad)

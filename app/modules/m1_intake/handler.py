@@ -10,6 +10,7 @@ from app import config, errors, store, web
 from app.modules.m2_timebase import service as timebase_service
 from app.modules.m6_batches import history
 from app.modules.m6_batches import service as batch_service
+from app.modules.m8_dst import service as dst_service
 
 from . import service
 
@@ -19,6 +20,7 @@ router = APIRouter(tags=["m1 采样采信"])
 class ImportBody(BaseModel):
     sample: str = Field(default="telemetry_raw", max_length=64)
     offsets: str = Field(default="device_offsets", max_length=64)
+    dst: str | None = Field(default=None, max_length=64)
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -34,6 +36,7 @@ def index(request: Request):
         "index",
         samples=service.sample_choices(),
         offsets=service.offset_choices(),
+        dst_choices=dst_service.dst_choices(),
         **data,
     )
 
@@ -78,9 +81,17 @@ def import_samples(body: ImportBody):
             code="OFFSET_TABLE_UNKNOWN",
             detail={"offsets": body.offsets, "choices": sorted(config.OFFSET_SAMPLES)},
         )
+    if body.dst is not None and body.dst not in config.DST_SAMPLES:
+        raise errors.InputError(
+            "未知回拨表",
+            code="DST_TABLE_UNKNOWN",
+            detail={"dst": body.dst, "choices": sorted(config.DST_SAMPLES)},
+        )
     conn = store.session()
     try:
-        result = batch_service.execute_run(conn, sample=body.sample, offsets=body.offsets)
+        result = batch_service.execute_run(
+            conn, sample=body.sample, offsets=body.offsets, dst=body.dst
+        )
     finally:
         conn.close()
     return JSONResponse(result)

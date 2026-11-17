@@ -74,3 +74,28 @@ MAIN_QUARANTINE = [
 
 THREE_PLACES = "0.001"
 SEVEN_DAY = "2026-03-01"
+
+# 秋季回拨样例（柏林 2026-10-25，本地 02:00–03:00 重复）：
+# TH-01 每分钟一点、两次经过各 60 桶，PM-02 五分钟率各 2 点，另有 1 条裸本地时间须隔离。
+DST = {
+    "raw_records": 130,
+    "accepted": 129,
+    "duplicates": 0,
+    "quarantined": 1,
+    "observed": 129,
+    "filled": 0,
+    "gaps": 37,
+    "expected_buckets": 166,
+    "windows": 20,
+    "fold_buckets": 124,
+    "fold_first": 62,
+    "fold_second": 62,
+    "fold_naive_quarantined": 1,
+    "th_fold_windows": 8,
+    "accepted_sum": "6976.600",
+}
+
+# 回拨两次经过中同一本地墙钟 02:15 对应的两个 UTC 桶（TH-01，漂移 0）。
+DST_REPEATED_LOCAL = "02:15"
+DST_FIRST_BUCKET = "2026-10-25T00:15:00Z"
+DST_SECOND_BUCKET = "2026-10-25T01:15:00Z"

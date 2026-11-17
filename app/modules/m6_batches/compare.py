@@ -37,6 +37,8 @@ def reconcile_lines(counts: dict, totals: dict) -> list[ReconcileLine]:
         counts.get("quarantined")
     )
     observed = _dec(counts.get("observed")) + _dec(counts.get("filled")) + _dec(counts.get("gaps"))
+    fold_total = _dec(counts.get("fold_buckets"))
+    fold_split = _dec(counts.get("fold_first")) + _dec(counts.get("fold_second"))
     lines = [
         ReconcileLine(
             line_no=1,
@@ -65,6 +67,13 @@ def reconcile_lines(counts: dict, totals: dict) -> list[ReconcileLine]:
             expected=_dec(counts.get("windows")),
             actual=_dec(counts.get("windows_stored")),
             note="应有窗口 = 落库窗口",
+        ),
+        ReconcileLine(
+            line_no=5,
+            name="回拨账",
+            expected=fold_total,
+            actual=fold_split,
+            note="回拨桶 = 第一次 + 第二次（含隔离的无时区行另计）",
         ),
     ]
     return lines

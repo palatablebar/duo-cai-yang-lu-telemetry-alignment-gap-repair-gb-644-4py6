@@ -14,11 +14,11 @@ from expected import MAIN
 
 
 def test_reconcile_balanced_on_main_sample(conn, run_main):
-    """四账相等：行账、网格账、数值账、窗口账差额都是 0。"""
+    """五账相等：行账、网格账、数值账、窗口账、回拨账差额都是 0。"""
     view = service.reconcile_view(conn, run_main["run_id"])
     assert view["balanced"] is True
-    assert view["conclusion"] == "四账相等"
-    assert len(view["lines"]) == 4
+    assert view["conclusion"] == "五账相等"
+    assert len(view["lines"]) == 5
     for line in view["lines"]:
         assert line["state"] == "OK"
         assert Decimal(line["delta"]) == 0
@@ -37,10 +37,13 @@ def test_reconcile_detects_drift():
         "gaps": 19,
         "windows": 14,
         "windows_stored": 14,
+        "fold_buckets": 0,
+        "fold_first": 0,
+        "fold_second": 0,
     }
     totals = {"accepted_sum": "5482.000", "observed_sum": "5482.000"}
     lines = compare.reconcile_lines(counts, totals)
-    assert [line.state for line in lines] == ["BAD", "OK", "OK", "OK"]
+    assert [line.state for line in lines] == ["BAD", "OK", "OK", "OK", "OK"]
     from app.modules.m6_batches import diff
 
     hints = diff.explain(lines, counts)

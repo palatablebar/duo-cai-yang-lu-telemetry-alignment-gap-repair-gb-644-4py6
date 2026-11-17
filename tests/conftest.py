@@ -52,6 +52,13 @@ def run_edge(conn):
 
 
 @pytest.fixture()
+def run_dst(conn):
+    return batch_service.execute_run(
+        conn, sample="dst_fallback", offsets="dst_device_offsets", dst="berlin_fallback"
+    )
+
+
+@pytest.fixture()
 def api(conn):
     from fastapi.testclient import TestClient
 

@@ -18,6 +18,13 @@
         {% for item in offsets %}<option value="{{ item.key }}">{{ item.label }}</option>{% endfor %}
       </select>
     </label>
+    <label class="field">
+      <span class="field-k">回拨表</span>
+      <select name="dst" id="dst-select">
+        <option value="">不启用</option>
+        {% for item in dst_choices %}<option value="{{ item.key }}">{{ item.label }}</option>{% endfor %}
+      </select>
+    </label>
     <button class="btn" type="submit" id="import-btn">导入样例</button>
     <span class="hint" id="import-hint" role="status"></span>
   </form>

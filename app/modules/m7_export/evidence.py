@@ -56,6 +56,10 @@ def cell(conn, run_id: str, sensor_id: str, bucket_utc: str) -> dict | None:
         "ingest_seq": sample["ingest_seq"] if sample else None,
         "offset_seconds": sample["offset_seconds"] if sample else None,
         "flags": (sample["flags"] if sample else "") or "",
+        "in_fold": bool(grid["in_fold"]),
+        "fold_occurrence": grid["fold_occurrence"],
+        "local_clock": sample["local_clock"] if sample else "",
+        "local_offset_minutes": sample["local_offset_minutes"] if sample else 0,
         "quarantine": quarantined,
         "duplicates": duplicates,
     }

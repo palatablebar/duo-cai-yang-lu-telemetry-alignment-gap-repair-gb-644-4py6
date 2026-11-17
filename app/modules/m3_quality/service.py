@@ -29,6 +29,10 @@ class Judged:
     offset: int
     late: bool
     flags: tuple[str, ...]
+    in_fold: bool = False
+    fold_occurrence: int = 0
+    local_clock: str = ""
+    local_offset_minutes: int = 0
 
 
 @dataclass
@@ -66,6 +70,10 @@ def judge_all(rows) -> JudgeResult:
                     offset=row.offset,
                     late=verdict.lateness,
                     flags=tuple(flags),
+                    in_fold=getattr(row, "in_fold", False),
+                    fold_occurrence=getattr(row, "fold_occurrence", 0),
+                    local_clock=getattr(row, "local_clock", ""),
+                    local_offset_minutes=getattr(row, "local_offset_minutes", 0),
                 )
             )
         else:
@@ -107,13 +115,18 @@ def persist_samples(conn, run_id: str, judged: list[Judged]) -> int:
             row.offset,
             1 if row.late else 0,
             ",".join(row.flags),
+            1 if row.in_fold else 0,
+            row.fold_occurrence,
+            row.local_clock,
+            row.local_offset_minutes,
         )
         for row in judged
     ]
     return store.insert_many(
         conn,
         "INSERT INTO samples(run_id, source_row, sensor_id, bucket_utc, value, unit, quality,"
-        " quality_rank, ingest_seq, offset_seconds, late, flags) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        " quality_rank, ingest_seq, offset_seconds, late, flags, in_fold, fold_occurrence,"
+        " local_clock, local_offset_minutes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         payload,
     )
 
@@ -156,6 +169,10 @@ def load_judged(conn, run_id: str) -> list[Judged]:
                 offset=row["offset_seconds"],
                 late=bool(row["late"]),
                 flags=flags,
+                in_fold=bool(row["in_fold"]),
+                fold_occurrence=row["fold_occurrence"],
+                local_clock=row["local_clock"],
+                local_offset_minutes=row["local_offset_minutes"],
             )
         )
     return restored

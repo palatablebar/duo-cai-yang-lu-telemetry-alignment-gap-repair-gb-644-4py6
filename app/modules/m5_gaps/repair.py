@@ -23,6 +23,8 @@ class GridPoint:
     reason: str
     fill_policy: str
     source_row: int | None
+    in_fold: bool = False
+    fold_occurrence: int = 0
 
 
 @dataclass
@@ -96,6 +98,8 @@ def repair(kept_rows, expected: dict[str, list[datetime]]) -> RepairResult:
                         reason="",
                         fill_policy=sensor_policy,
                         source_row=row.source_row,
+                        in_fold=getattr(row, "in_fold", False),
+                        fold_occurrence=getattr(row, "fold_occurrence", 0),
                     )
                 )
                 result.observed += 1

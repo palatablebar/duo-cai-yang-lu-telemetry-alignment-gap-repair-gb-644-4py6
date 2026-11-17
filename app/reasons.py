@@ -30,6 +30,8 @@ _REASONS = (
     Reason("OFFSET_ASSUMED", "默认偏移", False),
     Reason("OFFSET_CONFLICT", "偏移与表不符", False),
     Reason("TZ_FOREIGN", "异地时区", False),
+    Reason("DST_NAIVE_FOLD", "回拨时段无时区标记", True),
+    Reason("DST_FOLD_OCCURRENCE", "回拨重复时段", False),
     # —— 质量层（M3） ——
     Reason("SENTINEL_VALUE", "空值哨兵", True),
     Reason("NOT_DECIMAL", "数值无法解析", True),

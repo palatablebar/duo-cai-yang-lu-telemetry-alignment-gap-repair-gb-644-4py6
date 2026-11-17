@@ -6,7 +6,7 @@ import json
 
 from expected import MAIN
 
-PAGES = ("/", "/samples", "/quality", "/grid", "/gaps", "/batches")
+PAGES = ("/", "/samples", "/quality", "/grid", "/gaps", "/dst", "/batches")
 
 
 def test_full_pipeline_to_export(api):
@@ -25,12 +25,12 @@ def test_full_pipeline_to_export(api):
     assert payload["counts"]["accepted"] == MAIN["accepted"]
     assert payload["counts"]["quarantined"] == MAIN["quarantined"]
     assert payload["balanced"] is True
-    assert payload["conclusion"] == "四账相等"
+    assert payload["conclusion"] == "五账相等"
     assert payload["inputs"][0]["sha256"]
 
     reconcile = api.get("/api/reconcile").json()
     assert reconcile["balanced"] is True
-    assert len(reconcile["lines"]) == 4
+    assert len(reconcile["lines"]) == 5
 
     grid_csv = api.get("/api/export/grid.csv")
     assert grid_csv.status_code == 200

@@ -1,0 +1,2 @@
+station,sensor_id,fold_start_utc,fold_end_utc,pre_offset_minutes,post_offset_minutes
+berlin,*,2026-10-25T00:00:00Z,2026-10-25T02:00:00Z,120,60

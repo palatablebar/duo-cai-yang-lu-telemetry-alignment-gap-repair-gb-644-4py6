@@ -17,6 +17,7 @@ from app.modules.m3_quality import quarantine as quarantine_store
 from app.modules.m3_quality import service as quality_service
 from app.modules.m4_grid import service as grid_service
 from app.modules.m5_gaps import service as gaps_service
+from app.modules.m8_dst import service as dst_service
 
 from . import compare, diff, history
 
@@ -76,16 +77,24 @@ def _result(conn, run: dict, *, reused: bool, lines: list[compare.ReconcileLine]
     }
 
 
-def execute_run(conn, *, sample: str, offsets: str) -> dict:
+def execute_run(conn, *, sample: str, offsets: str, dst: str | None = None) -> dict:
     started = time.monotonic()
     loaded = intake_service.load_sample(sample)
     table = timebase_service.load_offsets(offsets)
+    dst_table = dst_service.load_table(dst) if dst else None
 
     inputs = [
         {"name": loaded.file_name, "sha256": loaded.sha256, "bytes": loaded.size},
         {"name": table.file_name, "sha256": table.sha256, "bytes": table.size},
     ]
+    if dst_table is not None:
+        inputs.append(
+            {"name": dst_table.file_name, "sha256": dst_table.sha256, "bytes": dst_table.size}
+        )
     params = _params()
+    if dst_table is not None:
+        # 仅在显式提供回拨表时入键，保证无 DST 的历史批次键不变、结论不变。
+        params["dst"] = dst
     key = manifest.run_key(inputs, config.RULE_VERSION, params)
 
     existing = history.find_by_key(conn, key)
@@ -94,7 +103,7 @@ def execute_run(conn, *, sample: str, offsets: str) -> dict:
 
     run_id = manifest.run_id_for(key)
 
-    normalized = timebase_service.normalize(loaded, table)
+    normalized = timebase_service.normalize(loaded, table, dst_table)
     judged = quality_service.judge_all(normalized.rows)
 
     rejects: list[dict] = []
@@ -150,6 +159,17 @@ def execute_run(conn, *, sample: str, offsets: str) -> dict:
         "segments": loaded.segments,
         "truncated": 1 if loaded.truncated else 0,
         "late": sum(1 for row in aligned.kept if row.late),
+        "fold_windows": len(dst_table.windows) if dst_table is not None else 0,
+        "fold_buckets": sum(1 for row in aligned.kept if getattr(row, "in_fold", False)),
+        "fold_first": sum(
+            1 for row in aligned.kept if getattr(row, "fold_occurrence", 0) == 1
+        ),
+        "fold_second": sum(
+            1 for row in aligned.kept if getattr(row, "fold_occurrence", 0) == 2
+        ),
+        "fold_naive_quarantined": sum(
+            1 for item in rejects if item["code"] == "DST_NAIVE_FOLD"
+        ),
         "empty_code": loaded.empty_code,
         "balanced": False,
     }
@@ -164,6 +184,8 @@ def execute_run(conn, *, sample: str, offsets: str) -> dict:
     lines: list[compare.ReconcileLine] = []
     with store.transaction(conn):
         timebase_service.store_offsets(conn, run_id, table.entries)
+        if dst_table is not None:
+            dst_service.store_dst(conn, run_id, dst_table)
         quality_service.persist_samples(conn, run_id, aligned.kept)
         grid_service.persist_duplicates(conn, run_id, aligned.duplicates)
         gaps_service.persist_grid(conn, run_id, repaired.points)

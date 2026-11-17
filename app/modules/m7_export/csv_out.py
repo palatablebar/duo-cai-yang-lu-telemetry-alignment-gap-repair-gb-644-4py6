@@ -23,6 +23,8 @@ GRID_COLUMNS = (
     "reason",
     "source_row",
     "flags",
+    "in_fold",
+    "fold_occurrence",
 )
 
 ACCEPTED_COLUMNS = (
@@ -56,7 +58,7 @@ def grid_export(conn, run_id: str) -> tuple[tuple[str, ...], list[list]]:
     rows = store.rows(
         conn,
         "SELECT g.sensor_id, g.bucket_utc, g.value, g.unit, g.state, g.reason, g.source_row,"
-        " s.flags AS flags FROM grid g LEFT JOIN samples s"
+        " g.in_fold, g.fold_occurrence, s.flags AS flags FROM grid g LEFT JOIN samples s"
         " ON s.run_id = g.run_id AND s.sensor_id = g.sensor_id AND s.bucket_utc = g.bucket_utc"
         " WHERE g.run_id = ? ORDER BY g.sensor_id, g.bucket_utc",
         (run_id,),
@@ -75,6 +77,8 @@ def grid_export(conn, run_id: str) -> tuple[tuple[str, ...], list[list]]:
                 row["reason"] or "",
                 "" if row["source_row"] is None else row["source_row"],
                 row["flags"] or "",
+                row["in_fold"],
+                row["fold_occurrence"],
             ]
         )
     return GRID_COLUMNS, payload

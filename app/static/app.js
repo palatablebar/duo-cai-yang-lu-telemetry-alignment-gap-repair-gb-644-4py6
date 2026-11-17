@@ -54,6 +54,7 @@
     const button = document.getElementById("import-btn");
     const sample = document.getElementById("sample-select");
     const offsets = document.getElementById("offsets-select");
+    const dst = document.getElementById("dst-select");
 
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
@@ -66,7 +67,8 @@
       try {
         const result = await postJSON("/api/samples/import", {
           sample: sample ? sample.value : "telemetry_raw",
-          offsets: offsets ? offsets.value : "device_offsets"
+          offsets: offsets ? offsets.value : "device_offsets",
+          dst: dst && dst.value ? dst.value : null
         });
         const counts = result.counts || {};
         const word = result.reused ? "复用" : "新增";

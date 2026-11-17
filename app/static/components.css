@@ -153,6 +153,12 @@ table.sheet-grid.wide {
   color: var(--ink-muted);
 }
 
+/* 回拨窗口内的桶：浅底色提示这是重复的本地墙钟时段 */
+.fold-row td,
+.fold-row th {
+  background: rgba(214, 158, 46, 0.12);
+}
+
 .mono {
   font-family: var(--font-num);
   font-size: 11px;

@@ -59,10 +59,16 @@ SAMPLES = {
     "crlf_quoted": ("crlf_quoted.csv", "换行混用"),
     "gb18030": ("telemetry_gb18030.csv", "中文表头"),
     "empty": ("empty_sample.csv", "空文件"),
+    "dst_fallback": ("dst_fallback.csv", "秋季回拨"),
 }
 
 OFFSET_SAMPLES = {
     "device_offsets": ("device_offsets.csv", "设备偏移表"),
+    "dst_device_offsets": ("dst_device_offsets.csv", "回拨设备偏移表"),
+}
+
+DST_SAMPLES = {
+    "berlin_fallback": ("dst_berlin_fallback.csv", "柏林秋季回拨表"),
 }
 
 
@@ -83,3 +89,9 @@ def offset_file(key: str) -> Path:
     if key not in OFFSET_SAMPLES:
         raise KeyError(key)
     return SAMPLE_DIR / OFFSET_SAMPLES[key][0]
+
+
+def dst_file(key: str) -> Path:
+    if key not in DST_SAMPLES:
+        raise KeyError(key)
+    return SAMPLE_DIR / DST_SAMPLES[key][0]

@@ -34,10 +34,15 @@ def test_grid_csv_header_and_rows(conn, run_main):
         "reason",
         "source_row",
         "flags",
+        "in_fold",
+        "fold_occurrence",
     ]
     assert rows[0]["row_no"] == "1"
     assert rows[0]["bucket_utc"].endswith("Z")
     assert rows[0]["bucket_local"].startswith("2026-03-01")
+    # 非回拨批次的回拨列必须是确定的零值，不能留空或漂移。
+    assert rows[0]["in_fold"] == "0"
+    assert rows[0]["fold_occurrence"] == "0"
 
 
 def test_grid_csv_gap_rows_have_empty_value(conn, run_gap):

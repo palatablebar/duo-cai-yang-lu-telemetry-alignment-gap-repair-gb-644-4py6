@@ -40,8 +40,10 @@ docker compose exec -T app python -m pytest -q
 | `crlf_quoted` | `sample_data/crlf_quoted.csv` | CRLF、引号内换行、重复表头分段 |
 | `gb18030` | `sample_data/telemetry_gb18030.csv` | GB18030 与中文表头 |
 | `empty` | `sample_data/empty_sample.csv` | 0 字节 |
+| `dst_fallback` | `sample_data/dst_fallback.csv` | 秋季回拨：本地 02:00–03:00 两次经过，含 1 条须隔离的裸本地时间 |
 
-偏移表固定用 `device_offsets.csv`；其中 `AM-06` 故意留两段重叠区间。
+偏移表有 `device_offsets.csv`（主样例，`AM-06` 故意留两段重叠区间）与 `dst_device_offsets.csv`（回拨样例）；回拨表固定用 `dst_berlin_fallback.csv`，其中 `*` 为全站条目。
+导入回拨批次时 body 增加 `"dst": "berlin_fallback"`；不传 `dst` 即按旧规则运行，批次键与结论不变。
 
 ## 接口
 
@@ -58,7 +60,9 @@ docker compose exec -T app python -m pytest -q
 | GET | `/api/gaps` | 缺口段与窗口覆盖 |
 | POST | `/api/gaps/repair` | 从采纳行重新推导缺口并与落库比对 |
 | GET | `/api/batches` | 批次清单 |
-| GET | `/api/reconcile` | 四账 |
+| GET | `/api/reconcile` | 五账 |
+| GET | `/api/dst/timeline` | 回拨可追溯时间轴（本地墙钟、第几次经过、UTC 桶） |
+| GET | `/api/dst/affected` | 与回拨跨度相交的 15 分钟窗口及回拨段内缺口 |
 | GET | `/api/export/grid.csv` | 网格 CSV |
 | GET | `/api/export/accepted.csv` | 采纳 CSV |
 | GET | `/api/export/quarantine.csv` | 隔离 CSV |

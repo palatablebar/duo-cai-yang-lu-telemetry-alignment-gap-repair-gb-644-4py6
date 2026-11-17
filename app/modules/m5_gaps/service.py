@@ -29,13 +29,16 @@ def persist_grid(conn, run_id: str, points) -> int:
             item.reason,
             item.fill_policy,
             item.source_row,
+            1 if getattr(item, "in_fold", False) else 0,
+            getattr(item, "fold_occurrence", 0),
         )
         for item in points
     ]
     return store.insert_many(
         conn,
         "INSERT INTO grid(run_id, sensor_id, bucket_utc, value, unit, state, reason,"
-        " fill_policy, source_row) VALUES (?,?,?,?,?,?,?,?,?)",
+        " fill_policy, source_row, in_fold, fold_occurrence)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         payload,
     )
 

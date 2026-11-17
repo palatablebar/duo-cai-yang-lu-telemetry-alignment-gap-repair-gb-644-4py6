@@ -35,6 +35,10 @@ class NormRow:
     quality: str
     ingest_seq: int
     flags: tuple[str, ...]
+    in_fold: bool = False
+    fold_occurrence: int = 0
+    local_clock: str = ""
+    local_offset_minutes: int = 0
 
 
 @dataclass(frozen=True)
@@ -75,7 +79,11 @@ def load_offsets(key: str) -> OffsetTable:
     return table
 
 
-def normalize(sample, table: OffsetTable) -> NormResult:
+def normalize(sample, table: OffsetTable, dst_table=None) -> NormResult:
+    """dst_table 为 m8_dst.service.DstTable 或 None；给定时对回拨窗口做判读。"""
+    from app.modules.m8_dst import fold as dst_fold
+    from app.modules.m8_dst import transition as dst_transition
+
     result = NormResult()
     for row in sample.rows:
         sensor_id = (row.cells.get("sensor_id") or "").strip()
@@ -138,6 +146,39 @@ def normalize(sample, table: OffsetTable) -> NormResult:
         if coerce.has_explicit_offset(raw_time) and not raw_time.strip().endswith(("Z", "z")):
             result.tz_written += 1
 
+        # —— DST 回拨判读 ——
+        in_fold = False
+        fold_occurrence = 0
+        local_clock_text = ""
+        local_offset_minutes = 0
+        if dst_table is not None and dst_table.windows:
+            fold_window = dst_transition.select_for(dst_table.windows, sensor_id)
+            written_seconds = dst_fold.explicit_offset_seconds(raw_time)
+            written_offset = (
+                timedelta(seconds=written_seconds) if written_seconds is not None else None
+            )
+            verdict = dst_fold.judge(
+                fold_window, raw_instant=instant, written_offset=written_offset
+            )
+            if verdict.naive:
+                result.rejects.append(
+                    NormReject(
+                        source_row=row.source_row,
+                        sensor_id=sensor_id,
+                        column_name="sampled_at",
+                        raw_value=raw_time,
+                        code="DST_NAIVE_FOLD",
+                        detail="回拨重复时段内的本地时刻缺少时区偏移，无法区分先后",
+                    )
+                )
+                continue
+            if verdict.in_fold:
+                in_fold = True
+                fold_occurrence = verdict.occurrence
+                flags.append("DST_FOLD_OCCURRENCE")
+            local_clock_text = dst_fold.local_clock(utc, verdict.local_offset)
+            local_offset_minutes = int(verdict.local_offset.total_seconds() // 60)
+
         ingest = coerce.parse_seconds(row.cells.get("ingest_seq", ""))
         result.rows.append(
             NormRow(
@@ -152,6 +193,10 @@ def normalize(sample, table: OffsetTable) -> NormResult:
                 quality=(row.cells.get("quality") or "").strip().lower() or config.DEFAULT_QUALITY,
                 ingest_seq=ingest if ingest is not None else row.source_row,
                 flags=tuple(flags),
+                in_fold=in_fold,
+                fold_occurrence=fold_occurrence,
+                local_clock=local_clock_text,
+                local_offset_minutes=local_offset_minutes,
             )
         )
     return result
@@ -204,7 +249,7 @@ def flag_counts(conn, run_id: str) -> list[dict]:
 
     return [
         {"code": code, "label": reasons.label(code), "count": counter.get(code, 0)}
-        for code in ("OFFSET_ASSUMED", "OFFSET_CONFLICT", "LATE_ARRIVAL")
+        for code in ("OFFSET_ASSUMED", "OFFSET_CONFLICT", "LATE_ARRIVAL", "DST_FOLD_OCCURRENCE")
     ]
 
 
